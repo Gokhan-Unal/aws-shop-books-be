@@ -25,6 +25,14 @@ export class AwsShopBeStack extends cdk.Stack {
       code: lambda.Code.fromAsset(path.join(__dirname, '../src')),
     });
 
+    const createProductLambda = new lambda.Function(this, 'CreateProductLambda', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      memorySize: 1024,
+      timeout: cdk.Duration.seconds(5),
+      handler: 'handlers/createProduct.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../src')),
+    });
+
     const api = new apigateway.RestApi(this, 'ProductApi', {
       restApiName: 'Product Service',
       description: 'Product Service API',
@@ -49,11 +57,15 @@ export class AwsShopBeStack extends cdk.Stack {
           },
         },
       ],
-      proxy: false,
+      proxy: true,
     });
 
     const productResource = api.root.addResource('products');
     const productByIdResource = productResource.addResource('{id}');
+
+    productResource.addMethod('POST', new apigateway.LambdaIntegration(createProductLambda), {
+      methodResponses: [{ statusCode: '200' }],
+    });
 
     productResource.addMethod('GET', productListLambdaIntegration, {
       methodResponses: [
@@ -86,7 +98,7 @@ export class AwsShopBeStack extends cdk.Stack {
             },
           },
         ],
-        proxy: false,
+        proxy: true,
       }),
       {
         methodResponses: [{ statusCode: '200' }, { statusCode: '404' }],
