@@ -28,13 +28,13 @@ describe('Lambda Handler', () => {
   });
 
   test('should return the list of products', async () => {
-    const result = await handler();
+    const result = await handler('');
     expect(result).toEqual(mockProducts);
   });
 
   test('should handle an empty product list', async () => {
     jest.spyOn(productService, 'getProductsList').mockImplementationOnce(async () => []);
-    const result = await handler();
+    const result = await handler('');
     expect(result).toEqual([]);
   });
 });
