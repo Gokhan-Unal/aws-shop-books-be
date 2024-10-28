@@ -5,7 +5,7 @@ import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 
 import * as path from 'path';
 
-export class AwsShopBeStack extends cdk.Stack {
+export class ProductServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
@@ -63,9 +63,34 @@ export class AwsShopBeStack extends cdk.Stack {
     const productResource = api.root.addResource('products');
     const productByIdResource = productResource.addResource('{id}');
 
-    productResource.addMethod('POST', new apigateway.LambdaIntegration(createProductLambda), {
-      methodResponses: [{ statusCode: '200' }],
-    });
+    productResource.addMethod(
+      'POST',
+      new apigateway.LambdaIntegration(createProductLambda, {
+        integrationResponses: [
+          {
+            statusCode: '200',
+            responseParameters: {
+              'method.response.header.Access-Control-Allow-Origin': "'https://d1psre7xuwrpjr.cloudfront.net'",
+              'method.response.header.Access-Control-Allow-Methods': "'POST, OPTIONS'",
+              'method.response.header.Access-Control-Allow-Headers': "'*'",
+            },
+          },
+        ],
+        proxy: true,
+      }),
+      {
+        methodResponses: [
+          {
+            statusCode: '200',
+            responseParameters: {
+              'method.response.header.Access-Control-Allow-Origin': true,
+              'method.response.header.Access-Control-Allow-Methods': true,
+              'method.response.header.Access-Control-Allow-Headers': true,
+            },
+          },
+        ],
+      }
+    );
 
     productResource.addMethod('GET', productListLambdaIntegration, {
       methodResponses: [
