@@ -5,18 +5,18 @@ const ddbClient = new DynamoDBClient({ region: 'eu-central-1' });
 const docClient = DynamoDBDocumentClient.from(ddbClient);
 
 export const handler = async (event: any) => {
-  const { productId } = event.pathParameters;
+  const { id } = event.pathParameters;
   console.log('event', event.pathParameters);
-  console.log('Product INFO GET ID', productId);
+  console.log('Product INFO GET ID', id);
 
   const productParams = {
     TableName: 'Products',
-    Key: { id: productId },
+    Key: { id: id },
   };
 
   const stockParams = {
     TableName: 'Stock',
-    Key: { product_id: productId },
+    Key: { product_id: id },
   };
 
   try {
