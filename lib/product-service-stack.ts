@@ -2,8 +2,13 @@ import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import * as sqs from 'aws-cdk-lib/aws-sqs';
+import * as sns from 'aws-cdk-lib/aws-sns';
+import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
+
 
 import * as path from 'path';
+import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 
 export class ProductServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -32,6 +37,26 @@ export class ProductServiceStack extends cdk.Stack {
       handler: 'handlers/createProduct.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../src')),
     });
+
+    const catalogBatchSQS = new sqs.Queue(this, 'catalog-batch-sqs');
+
+    const createProductTopic = new sns.Topic(this, 'createProductTopic');
+
+    createProductTopic.addSubscription(new subscriptions.EmailSubscription('gokhanunal71@gmail.com'));
+    
+    const catalogBatchProcess = new lambda.Function(this, 'catalogBatchProcess', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      memorySize: 1024,
+      timeout: cdk.Duration.seconds(5),
+      handler: 'handlers/catalogBatchProcess.catalogBatchProcess',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../src')),
+    });
+
+    catalogBatchProcess.addEventSource(
+      new SqsEventSource(catalogBatchSQS, {
+        batchSize: 5,
+      })
+    );
 
     const api = new apigateway.RestApi(this, 'ProductApi', {
       restApiName: 'Product Service',

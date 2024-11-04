@@ -3,7 +3,6 @@ import { Construct } from 'constructs';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
-
 import * as path from 'path';
 
 export class ImportServiceStack extends cdk.Stack {
@@ -26,7 +25,7 @@ export class ImportServiceStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       memorySize: 1024,
       timeout: cdk.Duration.seconds(5),
-      handler: 'handlers/importProductsFile.importProductsFile',
+      handler: 'handlers/importFileParser.importFileParser',
       code: lambda.Code.fromAsset(path.join(__dirname, '../src')),
     });
 
