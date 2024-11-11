@@ -5,7 +5,12 @@ import { randomUUID } from 'crypto';
 const ddbClient = new DynamoDBClient({ region: 'eu-central-1' });
 const docClient = DynamoDBDocumentClient.from(ddbClient);
 
-const isValidProduct = (title: string, description: string, price: number, count: number) => {
+const isValidProduct = (
+  title: string,
+  description: string,
+  price: number,
+  count: number
+) => {
   if (!title || !description || !price || price <= 0 || count < 0) {
     return false;
   }
@@ -16,6 +21,7 @@ export const handler = async (event: any) => {
   const { title, description, price, count } = JSON.parse(event.body);
   console.log('eventINFO', event.body);
   console.log('ProductINFO', title, description, price, count);
+
   const id = randomUUID();
 
   if (!isValidProduct(title, description, price, count)) {

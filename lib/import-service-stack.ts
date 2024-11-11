@@ -3,6 +3,8 @@ import { Construct } from 'constructs';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import * as nodeJsLambda from 'aws-cdk-lib/aws-lambda-nodejs';
+
 import * as path from 'path';
 
 export class ImportServiceStack extends cdk.Stack {
@@ -22,7 +24,7 @@ export class ImportServiceStack extends cdk.Stack {
     });
 
     const importFileParserLambda = new lambda.Function(this, 'ImportFileParserLambda', {
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_14_X,
       memorySize: 1024,
       timeout: cdk.Duration.seconds(5),
       handler: 'handlers/importFileParser.importFileParser',
@@ -39,6 +41,22 @@ export class ImportServiceStack extends cdk.Stack {
       },
     });
 
+    const basicAuthorizerLambda = new nodeJsLambda.NodejsFunction(this, 'BasicAuthorizerLambda', {
+      entry: path.join(__dirname, '../src/handlers/basicAuthorizer.ts'),
+      runtime: lambda.Runtime.NODEJS_20_X,
+      memorySize: 1024,
+      timeout: cdk.Duration.seconds(5),
+      handler: 'handler',
+      environment: {
+        LOGIN: process.env.LOGIN || '',
+        PASSWORD: process.env.PASSWORD || '',
+      },
+    });
+
+    const basicAuthorizer = new apigateway.TokenAuthorizer(this, 'ApiAuthorizer', {
+      handler: basicAuthorizerLambda,
+    });
+
     const importProductsFileLambdaIntegration = new apigateway.LambdaIntegration(importProductsFileLambda, {
       requestTemplates: {
         'application/json': `{}`,
@@ -53,12 +71,36 @@ export class ImportServiceStack extends cdk.Stack {
           },
         },
       ],
-      proxy: true,
+      proxy: false,
     });
 
     const importResource = api.root.addResource('import');
 
+    api.addGatewayResponse('AccessDeniedResponse', {
+      type: apigateway.ResponseType.ACCESS_DENIED,
+      responseHeaders: {
+        'method.response.header.Access-Control-Allow-Origin': "'*'",
+        'method.response.header.Access-Control-Allow-Methods': "'GET, OPTIONS'",
+        'method.response.header.Access-Control-Allow-Headers': "'*'",
+      },
+      statusCode: '403',
+      templates: { 'application/json': '{"message": $context.error.messageString}' },
+    });
+
+    api.addGatewayResponse('UnauthorizedResponse', {
+      type: apigateway.ResponseType.UNAUTHORIZED,
+      responseHeaders: {
+        'method.response.header.Access-Control-Allow-Origin': "'*'",
+        'method.response.header.Access-Control-Allow-Methods': "'GET, OPTIONS'",
+        'method.response.header.Access-Control-Allow-Headers': "'*'",
+      },
+      statusCode: '401',
+      templates: { 'application/json': '{"message": "Unauthorized - Token invalid or missing"}' },
+    });
+
     importResource.addMethod('GET', importProductsFileLambdaIntegration, {
+      authorizer: basicAuthorizer,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
       methodResponses: [
         {
           statusCode: '200',
