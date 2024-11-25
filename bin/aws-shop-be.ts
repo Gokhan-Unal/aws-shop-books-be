@@ -4,6 +4,7 @@ import * as cdk from 'aws-cdk-lib';
 import { AwsDynoStack } from '../lib/aws-dyno-stack';
 import { ProductServiceStack } from '../lib/product-service-stack';
 import { ImportServiceStack } from '../lib/import-service-stack';
+import { RdsServiceStack } from '../lib/rds-service-stack';
 
 const app = new cdk.App();
 new ProductServiceStack(app, 'AwsShopBeStack', {
@@ -20,3 +21,10 @@ new ProductServiceStack(app, 'AwsShopBeStack', {
 });
 new AwsDynoStack(app, 'AwsDynoStack');
 new ImportServiceStack(app, 'ImportServiceStack');
+const envAPS = {
+  account: process.env.AWS_ACCOUNT_NUMBER,
+  region: process.env.AWS_REGION,
+};
+new RdsServiceStack(app, 'RdsServiceStack', {
+  env: envAPS,
+});
