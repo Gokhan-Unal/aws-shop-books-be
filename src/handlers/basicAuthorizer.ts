@@ -1,4 +1,4 @@
-export const basicAuthorizer = async (event, context) => {
+export const basicAuthorizer = async (event: any, context: any) => {
   const { authorization } = event.headers;
   if (!authorization) {
     return {
